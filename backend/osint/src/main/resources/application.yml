@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: Osint
+  docker:
+    compose:
+      enabled: false
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/osintdb}
+    username: ${DB_USERNAME:osintuser}
+    password: ${DB_PASSWORD:osintpass}
+    driverClassName: org.postgresql.Driver
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+server:
+  port: 8081
+logging:
+  level:
+    root: INFO
+    com.ptbox.osint: DEBUG
+  file:
+    name: logs/app.log
+
+scan:
+  timeout:
+    minutes: 5

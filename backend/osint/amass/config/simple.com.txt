@@ -1,0 +1,2 @@
+simple.com (FQDN) --> ns_record --> ns77.worldnic.com (FQDN)
+simple.com (FQDN) --> ns_record --> ns78.worldnic.com (FQDN)
