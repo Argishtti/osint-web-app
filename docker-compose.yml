@@ -1,0 +1,48 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: osintdb
+      POSTGRES_USER: osintuser
+      POSTGRES_PASSWORD: osintpass
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-osint-data:/var/lib/postgresql/osint/data
+    networks:
+      - osint-net
+
+  backend:
+    build:
+      context: ./backend
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/osintdb
+      SPRING_DATASOURCE_USERNAME: osintuser
+      SPRING_DATASOURCE_PASSWORD: osintpass
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./backend/amass/config:/config/amass
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - osint-net
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - osint-net
+
+volumes:
+  postgres-osint-data:
+
+networks:
+  osint-net:
+    driver: bridge

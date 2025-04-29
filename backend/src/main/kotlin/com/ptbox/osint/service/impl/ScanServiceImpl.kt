@@ -1,4 +1,4 @@
-package com.ptbox.osint.service
+package com.ptbox.osint.service.impl
 
 import com.ptbox.osint.dto.ScanResponseDto
 import com.ptbox.osint.dto.ScanResultResponseDto
@@ -8,11 +8,11 @@ import com.ptbox.osint.exception.ScanProcessingException
 import com.ptbox.osint.model.Scan
 import com.ptbox.osint.model.ScanResult
 import com.ptbox.osint.repository.ScanRepository
-import com.ptbox.osint.service.impl.ScanService
 import jakarta.annotation.PreDestroy
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.io.File
 import java.time.LocalDateTime
@@ -32,6 +32,10 @@ class ScanServiceImpl(
     private val activeScans = ConcurrentHashMap<String, MutableSet<String>>()
     private val scanChannel = Channel<ScanRequest>(Channel.UNLIMITED)
     private val scanScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    @Value("\${project.root.path}")
+    private lateinit var projectRootPath: String
+
 
     init {
         repeat(WORKER_COUNT) { workerId ->
@@ -113,7 +117,10 @@ class ScanServiceImpl(
         try {
             val process = withContext(Dispatchers.IO) {
                 ProcessBuilder(
-                        "docker", "exec", "amass", "amass", "enum",
+                        "docker", "run", "--rm",
+                        "-v", "/config/amass:/config/amass",
+                        "caffix/amass",
+                        "enum",
                         "-config", "/config/amass/amass_config.yaml",
                         "-d", domain,
                         "-o", "/config/amass/$domain.txt"
