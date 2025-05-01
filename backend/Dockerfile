@@ -6,7 +6,14 @@ RUN gradle build -x test
 
 FROM eclipse-temurin:21-jre-alpine
 
+RUN apk add --no-cache \
+    curl \
+    py3-pip \
+    bash \
+    docker-cli
+
 WORKDIR /app
+
 COPY --from=builder /app/build/libs/*.jar app.jar
 
 EXPOSE 8081

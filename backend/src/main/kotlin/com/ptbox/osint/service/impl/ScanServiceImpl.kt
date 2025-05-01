@@ -33,9 +33,6 @@ class ScanServiceImpl(
     private val scanChannel = Channel<ScanRequest>(Channel.UNLIMITED)
     private val scanScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    @Value("\${project.root.path}")
-    private lateinit var projectRootPath: String
-
 
     init {
         repeat(WORKER_COUNT) { workerId ->
@@ -111,21 +108,27 @@ class ScanServiceImpl(
     }
 
     private suspend fun runAmassScan(domain: String, sessionId: String): String {
-        val filePath = "osint/amass/config/$domain.txt"
+        val filePath = "/config/amass/$domain.txt"
         val outputFile = File(filePath)
 
         try {
             val process = withContext(Dispatchers.IO) {
                 ProcessBuilder(
-                        "docker", "run", "--rm",
+                        "docker", "run",
+                        "--rm",
                         "-v", "/config/amass:/config/amass",
                         "caffix/amass",
-                        "enum",
-                        "-config", "/config/amass/amass_config.yaml",
-                        "-d", domain,
-                        "-o", "/config/amass/$domain.txt"
+                        "sh", "-c",
+                        """
+        if [ ! -f /config/amass/amass_config.yaml ]; then
+          /app/amass config > /config/amass/amass_config.yaml;
+        fi
+        /app/amass enum -config /config/amass/amass_config.yaml -d $domain -o /config/amass/$domain.txt
+        """.trimIndent()
                 ).redirectErrorStream(true).start()
             }
+
+
 
             val logs = process.inputStream.bufferedReader().readText()
             val exitCode = withContext(Dispatchers.IO) {
